@@ -1,0 +1,55 @@
+name: Build Firefox with SoftCloud.dev CA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - softcloud-trusted-ca
+
+permissions:
+  contents: read
+
+jobs:
+  verify-ca-injection:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Install NSS tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3-tools openssl curl
+      - name: Test CA injection
+        run: .github/scripts/test-softcloud-trusted-ca.sh
+
+  build-linux:
+    needs: verify-ca-injection
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Reclaim runner disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc || true
+          df -h /
+      - name: Install CA tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3-tools openssl curl
+      - name: Bootstrap Firefox build dependencies
+        run: ./mach --no-interactive bootstrap --application-choice="Firefox for Desktop"
+      - name: Inject SoftCloud.dev CA into NSS trust data
+        run: .github/scripts/prepare-softcloud-trusted-ca.sh
+      - name: Build Firefox
+        run: ./mach build
+      - name: Package Firefox
+        run: ./mach package
+      - name: Upload Firefox package
+        uses: actions/upload-artifact@v4
+        with:
+          name: firefox-softcloud-trusted-ca-linux-x86_64
+          path: obj-*/dist/firefox-*.tar.*
+          if-no-files-found: error
