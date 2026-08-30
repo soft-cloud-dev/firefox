@@ -4,7 +4,7 @@
     "@types/webidl2": "24.4.4",
     "@typescript/dom-lib-generator": "github:microsoft/TypeScript-DOM-lib-generator#@types/web@0.0.349",
     "bcd-idl-mapper": "3.0.1",
-    "jest": "30.4.2",
+    "jest": "30.5.0",
     "jsonc-parser": "3.3.1",
     "kdljs": "0.3.0",
     "peggy": "5.1.0",
